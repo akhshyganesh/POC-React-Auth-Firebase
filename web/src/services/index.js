@@ -20,6 +20,15 @@ export async function makeAPIRequest(url, options=DEFAULT_OPTIONS) {
 // Add a request interceptor
 axios.interceptors.request.use(
     async config => {
+        // Wait for the Firebase authentication initialization process to complete
+        // Make sure auth is refreshed and we have currentUser all the time
+        await new Promise((resolve) => {
+            const unsubscribe = auth.onAuthStateChanged((user) => {
+                unsubscribe()
+                resolve()
+            })
+        })
+        // get currentUser from firebase
         const user = auth.currentUser
         if (user) {
             const idTokenResult = await user.getIdTokenResult()
@@ -29,7 +38,7 @@ axios.interceptors.request.use(
         } else {
             console.error('Unauthorized, No user is currently logged in.')
         }
-    // config.headers['Content-Type'] = 'application/json'
+        // config.headers['Content-Type'] = 'application/json'
         return config
     },
     error => {
